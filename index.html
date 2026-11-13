@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政治・経済 赤シート＆穴埋め暗記マスター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .serif-text {
+            font-family: 'Noto Serif JP', serif;
+        }
+        /* 赤シート用ブランク（オレンジ・赤字の暗記ペン風） */
+        .blank-red {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 3.5rem;
+            padding: 0.1rem 0.5rem;
+            margin: 0.15rem 0.15rem;
+            border-radius: 0.375rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            vertical-align: baseline;
+            border-bottom: 2px solid #e11d48;
+        }
+        .blank-red.hidden-ans {
+            background-color: #ffe4e6;
+            color: transparent;
+            box-shadow: inset 0 1px 2px rgba(225, 29, 72, 0.15);
+        }
+        .blank-red.hidden-ans::after {
+            content: "？？？";
+            color: #f43f5e;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            position: absolute;
+        }
+        .blank-red.revealed {
+            background-color: #fff1f2;
+            color: #e11d48;
+        }
+
+        /* 黄色マーカー用ブランク */
+        .blank-yellow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 3.5rem;
+            padding: 0.1rem 0.5rem;
+            margin: 0.15rem 0.15rem;
+            border-radius: 0.375rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            vertical-align: baseline;
+            border-bottom: 2px solid #d97706;
+        }
+        .blank-yellow.hidden-ans {
+            background-color: #fef3c7;
+            color: transparent;
+            box-shadow: inset 0 1px 2px rgba(217, 119, 6, 0.15);
+        }
+        .blank-yellow.hidden-ans::after {
+            content: "？？？";
+            color: #d97706;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            position: absolute;
+        }
+        .blank-yellow.revealed {
+            background-color: #fffbeb;
+            color: #b45309;
+            background-image: linear-gradient(transparent 60%, #fde68a 60%);
+        }
+
+        /* 赤シートオーバーレイ（本物の赤い下敷き風モード） */
+        body.real-red-sheet .real-sheet-target-red {
+            color: #fca5a5 !important; /* 赤シート越しに見えなくなる色 */
+            background-color: transparent !important;
+        }
+        body.real-red-sheet .real-sheet-target-yellow {
+            color: #fde047 !important;
+            background-color: transparent !important;
+        }
+        .red-sheet-overlay {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 640px;
+            height: 180px;
+            background-color: rgba(220, 38, 38, 0.86);
+            border: 3px solid rgba(185, 28, 28, 0.9);
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            cursor: ns-resize;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(1px);
+        }
+
+        /* 入力テスト用インプット */
+        .test-input {
+            border: 2px solid #cbd5e1;
+            border-radius: 0.375rem;
+            padding: 0.15rem 0.5rem;
+            margin: 0.15rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+            background-color: #ffffff;
+            transition: all 0.2s;
+            min-width: 5rem;
+            max-width: 14rem;
+        }
+        .test-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .test-input.correct {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+            color: #047857;
+        }
+        .test-input.incorrect {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white font-bold shadow-sm">
+                        政経
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-800 leading-tight">政治・経済 暗記マスター</h1>
+                        <p class="text-xs text-slate-500">学問のすゝめ（解説・原文）＆ 3年2期 経済分野</p>
+                    </div>
+                </div>
+
+                <!-- 全体進捗バー -->
+                <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <div class="text-xs font-medium text-slate-600">
+                        習得率: <span id="mastery-percent" class="font-bold text-rose-600 text-sm">0%</span>
+                        <span class="text-slate-400 ml-1">(<span id="mastered-count">0</span>/<span id="total-count">0</span>)</span>
+                    </div>
+                    <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div id="mastery-bar" class="h-full bg-gradient-to-r from-rose-500 to-amber-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <button onclick="resetProgress()" title="進捗をリセット" class="text-xs text-slate-400 hover:text-rose-600 transition-colors p-1">
+                        ↺
+                    </button>
+                </div>
+            </div>
+
+            <!-- カテゴリタブ -->
+            <div class="flex gap-1.5 mt-3 overflow-x-auto pb-1 no-scrollbar">
+                <button onclick="switchTab('gakumon_summary')" id="tab-gakumon_summary" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-rose-600 text-white shadow-sm">
+                    📘 学問のすゝめ（解説・要約編）
+                </button>
+                <button onclick="switchTab('gakumon_text')" id="tab-gakumon_text" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    📜 学問のすゝめ（原文読解編）
+                </button>
+                <button onclick="switchTab('economy')" id="tab-economy" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                    📈 3年2期 経済分野
+                </button>
+            </div>
+        </div>
+
+        <!-- コントロールバー -->
+        <div class="bg-slate-50 border-t border-slate-200 px-4 py-2">
+            <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+                <!-- 学習モード切替 -->
+                <div class="flex items-center bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+                    <button onclick="setMode('tap')" id="mode-tap" class="px-2.5 py-1 rounded-md font-bold bg-slate-800 text-white transition-all">
+                        👆 タップ暗記
+                    </button>
+                    <button onclick="setMode('input')" id="mode-input" class="px-2.5 py-1 rounded-md font-bold text-slate-600 hover:bg-slate-100 transition-all">
+                        ⌨️ 入力テスト
+                    </button>
+                    <button onclick="setMode('sheet')" id="mode-sheet" class="px-2.5 py-1 rounded-md font-bold text-slate-600 hover:bg-slate-100 transition-all">
+                        🟥 可動赤シート
+                    </button>
+                </div>
+
+                <!-- 一括操作・フィルター -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <button onclick="hideAll()" class="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg font-medium text-slate-700 transition-colors shadow-2xs">
+                        🙈 すべて隠す
+                    </button>
+                    <button onclick="revealAll()" class="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 rounded-lg font-medium text-slate-700 transition-colors shadow-2xs">
+                        👁️ すべて表示
+                    </button>
+                    <button onclick="shuffleCards()" class="px-2.5 py-1.5 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 rounded-lg font-medium text-slate-700 transition-colors shadow-2xs">
+                        🔀 シャッフル
+                    </button>
+                    <label class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 select-none shadow-2xs">
+                        <input type="checkbox" id="filter-unmastered" onchange="renderCards()" class="rounded text-rose-600 focus:ring-rose-500">
+                        <span class="font-medium text-slate-700">未習得のみ</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- サブカテゴリフィルター（セクションジャンプ） -->
+    <div class="max-w-5xl w-full mx-auto px-4 pt-3">
+        <div id="section-pills" class="flex gap-1.5 overflow-x-auto pb-2 text-xs">
+            <!-- JSで動的生成 -->
+        </div>
+    </div>
+
+    <!-- メインコンテンツエリア -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-3 pb-28">
+        <!-- 入力テストモード時の採点バー -->
+        <div id="test-action-bar" class="hidden mb-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="text-xs sm:text-sm text-blue-800 font-medium">
+                ⌨️ 空欄に語句を入力して「まとめて採点」を押してください（全角・半角・一部の別表記も自動判定します）
+            </div>
+            <div class="flex gap-2">
+                <button onclick="gradeAllInputs()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-sm transition-colors">
+                    ⭕ まとめて採点する
+                </button>
+                <button onclick="clearAllInputs()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 text-xs sm:text-sm font-medium rounded-lg transition-colors">
+                    クリア
+                </button>
+            </div>
+        </div>
+
+        <!-- カード一覧コンテナ -->
+        <div id="cards-container" class="space-y-4">
+            <!-- JSで問題カードを生成 -->
+        </div>
+    </main>
+
+    <!-- 可動式リアル赤シートオーバーレイ -->
+    <div id="red-sheet-overlay" class="red-sheet-overlay hidden" style="top: 220px;">
+        <div class="flex justify-between items-center text-xs font-bold tracking-wider">
+            <span>🟥 赤シート（上下にドラッグして移動）</span>
+            <button onclick="setMode('tap')" class="bg-black/30 hover:bg-black/50 px-2 py-0.5 rounded text-white">閉じる ✕</button>
+        </div>
+        <div class="text-center text-xs opacity-80 pointer-events-none">
+            文字の上に重ねると赤・黄色の重要語句が隠れます
+        </div>
+        <div class="flex justify-center">
+            <div class="w-12 h-1.5 bg-white/50 rounded-full"></div>
+        </div>
+    </div>
+
+    <!-- トースト通知用 -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+        通知メッセージ
+    </div>
+
+    <script>
+        // ==========================================
+        // データ定義（3つのPDFの全穴埋め・赤黄色文字を網羅）
+        // 書式: {{答え|別解1,別解2|color}}  color: red(赤字) / yellow(黄色ハイライト)
+        // ==========================================
+        const studyData = {
+            gakumon_summary: [
+                // --- 成立・基本事項 ---
+                {
+                    id: "gs_1",
+                    section: "成立・基本事項",
+                    title: "「学問のすゝめ」初編の成立と出版の経緯",
+                    content: "「学問のすゝめ」初編の成立は{{明治5年2月|明治五年二月|red}}である。もともとは{{私立中津市学校|中津市学校|yellow}}の生徒向けに書かれたが、内容が評価され世間に広まった。初編の同著（共著）は{{小幡篤次郎|小幡甚三郎|red}}で、彼は{{中津市学校教員|中津市学校の教員|yellow}}であった。"
+                },
+                {
+                    id: "gs_2",
+                    section: "成立・基本事項",
+                    title: "二編〜十七編の成立時期と合本・繋がり",
+                    content: "二編は明治{{6年1月|yellow}}、三編は{{6年12月|yellow}}、四編・五編は{{7年1月|yellow}}、六編は{{7年2月|同2月|yellow}}、七編は{{7年3月|3月|yellow}}、八編は{{7年4月|4月|yellow}}、九編は{{7年5月|5月|yellow}}、十編は{{7年6月|6月|yellow}}、十一編は{{7年7月|7月|yellow}}、十二編・十三編は{{7年12月|同12月|yellow}}、十四編は{{8年3月|yellow}}、十五編は{{9年7月|yellow}}、十六編は{{9年8月|yellow}}、十七編は{{9年11月|yellow}}に成立した。<br>合本が出版されたのは{{明治13年7月|red}}であり、一般大衆にも読みやすいように主に{{平仮名|ひらがな|red}}（仮名交じり文）で書かれた。<br>内容に繋がりがある編の組み合わせは、{{1-3|1・3|yellow}}、{{4-5|4・5|yellow}}、{{6-7|6・7|yellow}}、{{8-11|8・11|yellow}}、{{9-10|9・10|yellow}}である。"
+                },
+                {
+                    id: "gs_3",
+                    section: "初編・二編",
+                    title: "初編のキーワード（分限・実学・王政一新・開闢）",
+                    content: "初編・二編・三編・六編・七編は主に{{社会|red}}についての議論である。<br>「学問をするには{{分限|red}}を知る事肝要なり」の「分限」とは、{{社会人としての自己の立場|自己の立場|yellow}}という意味である。これを守らない自由は{{我儘・放蕩|我儘放蕩,わがまま・ほうとう|red}}に陥る。<br>また、明治維新を指す「王政一度新たなりし」とは{{王政復古|王政一新|yellow}}のことであり、「開闢（かいびゃく）」とは{{国の始まり|世界の始まり,歴史の始まり|yellow}}を意味する。"
+                },
+                {
+                    id: "gs_4",
+                    section: "初編・二編",
+                    title: "初編要約：天は人の上に人を造らずと「実学」",
+                    content: "天は人の{{上|red}}に人を造らず、人の下に人を{{造らず|red}}とはよく言うが、現実には{{貧富貴賤|賢愚・貧富|yellow}}の差がある。学問をするものは身分が高く富み、{{無学|yellow}}な人は{{貧乏|yellow}}で下人になる。ここでいう学問とは単なる文字の暗記ではなく、{{実学|red}}のことを言う。具体的には、{{地理|red}}・{{究理|red}}（物理学）・{{歴史|red}}・{{経済|red}}・修身などがあり、これらを学ぶことで個人・家・国家が独立する。外国に対抗して自国を発展させ自由を守り、良い政治を行うために人民が学問をすることが大切だ。"
+                },
+                {
+                    id: "gs_5",
+                    section: "初編・二編",
+                    title: "二編のキーワード（論語読み・通義・私立の活計・互恵と平等）",
+                    content: "・「論語読みの論語知らず」とは、{{論語を訓読できるだけでその内容を理解できない人|yellow}}のこと。<br>・現在でいう「権利」のことを福澤諭吉は{{通義|red}}といい、英語では{{right|ライト|red}}という。<br>・「私立の活計」とは、{{経済的に独立した暮らし|経済的独立|yellow}}のこと。<br>・「レシプロシチ（reciprocity）」とは{{互恵|red}}、「エクウヲリチ（equality）」とは{{平等|red}}のことである。"
+                },
+                {
+                    id: "gs_6",
+                    section: "初編・二編",
+                    title: "二編要約：人民と政府の対等な関係と暴政の回避",
+                    content: "人は常に人として{{同等|対等|yellow}}であることを忘れてはいけない。また、人民と政府も{{同等|対等|red}}でなければならない。政府は{{法|法律|yellow}}を作り、人民は法を守るというお互いの契約を守るべきである。政府が{{暴政|red}}を行うことがあるが、それは君主だけのせいではなく、人民が無知なせいでもある。人民が{{無知|yellow}}のせいで犯罪を犯すと政府は無慈悲な政治をしなくてはいけなくなるため、暴政を避けたいなら、学問によって{{智徳|見識|yellow}}を高め、政府と{{同等|対等|red}}の地位に登らなければならない。"
+                },
+                // --- 三編・四編・五編 ---
+                {
+                    id: "gs_7",
+                    section: "三編〜五編",
+                    title: "三編の語句と要約：独立の気力と3つの害",
+                    content: "・「戈を倒にする」とは{{裏切る事|裏切ること|yellow}}である。<br>・「仏蘭西と孛魯西（プロイセン）との戦」とは{{普仏戦争|red}}のことで、フランス軍はプロイセンに敗北し、ナポレオン3世は{{捕虜|red}}になったが、パリ市民は抵抗を続けた。<br>・国と国も富強に関わらず対等であり、そのためには国中の人民に{{独立の気力|red}}がなければならない。独立の気力がない人の3つの害：①{{国を思うこと切ならず|愛国心が持てない|yellow}}（今川義元が討たれた時に家臣が逃げ去ったのに対し、フランス人は戦い続けた）。②内で独立していない者は外国人と接するときも{{独立の権利|yellow}}を持つことができず、人を恐れへつらう。③人に依頼して{{悪事|yellow}}をすることがあり、他人の威を借りて取引しようとする。"
+                },
+                {
+                    id: "gs_8",
+                    section: "三編〜五編",
+                    title: "四編・五編の語句（君子・スピリット・奢侈・ミドルクラス）",
+                    content: "・学問に通じ徳の高い立派な人のことを{{君子|red}}という。<br>・上下で隔絶してしまった無形の気風のことを{{スピリット|spirit|red}}と言っている。<br>・贅沢のことを{{奢侈|しゃし|red}}という。<br>・蒸気機関を発明したのは{{ワット|ジェームズ・ワット|red}}、鉄道は{{スティーブンソン|red}}、経済学は{{アダム・スミス|アダムスミス|red}}であり、この人たちは{{中産階級|ミドルクラス,middle class|red}}（ミドルクラス）の人々である。<br>・「社中」とは{{仲間|結社,グループ|yellow}}のことである。"
+                },
+                {
+                    id: "gs_9",
+                    section: "三編〜五編",
+                    title: "四編・五編要約：文明の精神と民間の役割",
+                    content: "四編：国の独立を保つには政府と人民がともに力を出さなければならない。現在我が国に足りないのは学術と{{商売|yellow}}と法律である。政府は依然として{{専制|yellow}}政府であり、人民は無気力のままである。人民を導くべき洋学者は{{官職|yellow}}を求めてばかりで頼れないため、我々は民間の立場で学術・商売・法律を実践し、{{演説|yellow}}や新聞などで政府を批判し人民を導くべきだ。<br>五編：文明というのは形のある外見を指すのではなく、人民の{{気力|スピリット|red}}（文明の精神）が一番大切だ。西洋の文明は{{中産階級|ミドルクラス|red}}から興り、政府の役割はそれを保護することである。"
+                },
+                // --- 六編・七編・評 ---
+                {
+                    id: "gs_10",
+                    section: "六編・七編・評",
+                    title: "六編・七編の主張：国民の二つの役割とロックの社会契約説",
+                    content: "・六編で主張される国民の二つの役割：自分の代理として政府を立て、{{悪人|罪ある者|yellow}}を抑えて善人を保護すること、政府との{{約束|契約|yellow}}を守りその{{法律|国法|yellow}}に従って保護を受けること（私的な敵討ちや{{切捨御免|切り捨て御免|red}}は国法を犯す行為である）。<br>・七編の内容は{{ロック|ジョン・ロック|red}}の社会契約説に似ている。著作『{{統治二論|市民政府二論,二論|red}}』では、すべての人間は生命・自由・{{財産|所有権|red}}についての自然権を持ち、これが守られるように社会契約を結んで自然権の一部を政府に信託し、暴政に対しては{{抵抗権|red}}を持つとされる。<br>・七編で主張される国民の二つの務め：一つは政府の下に立つ一人の{{人民|yellow}}（国法に従う客としての務め）、もう一つは政府を作って法を作る{{主人|red}}としての務めである。"
+                },
+                {
+                    id: "gs_11",
+                    section: "六編・七編・評",
+                    title: "暴政への3つの対処法とマルチルドム（殉教）",
+                    content: "暴政に対して人民ができること3つ：①政府に従うこと（{{屈従|yellow}}）、②力をもって政府に反逆すること（{{内乱|暴力|yellow}}）、③正しい道理を主張し自分を{{犠牲|身|red}}にしてでも政府にせまること。福澤が推しているのは{{3つ目|③,正理を唱えて身を棄てること|red}}である。<br>・世のために苦しむ、あるいは命を落とすもののことを西洋の語で{{マルチルドム|martyrdom|red}}（殉教）という。<br>・福澤は六・七編で間接的に{{忠臣義士|主人のために命を落とす忠臣|red}}を否定した。例として、後醍醐天皇の命令に従い勝利の見込みがない足利尊氏との湊川の戦いに臨んで討死した{{楠木正成|red}}を挙げ、その死を「権助が首をくくる」のと変わらない無益な死（{{徒死|むだじに|yellow}}）と論じた。<br>・一方で、重税に苦しむ農民のために将軍に直訴し処刑された{{佐倉宗五郎|佐倉惣五郎|red}}を名指しで称賛した。<br>・明治7年の最大の反乱は{{佐賀の乱|red}}（{{江藤新平|red}}による）、明治10年は{{西南戦争|red}}（{{西郷隆盛|red}}による）。"
+                },
+                {
+                    id: "gs_12",
+                    section: "六編・七編・評",
+                    title: "「学問のすすめの評」と福澤の反論",
+                    content: "六、七編は「楠公権助論」として激しい批判を受け、福澤は『{{学問のすすめの評|red}}』で反論した。その際のペンネームは{{五楼仙友|red}}で、自分のことを「福澤氏」と呼び第三者が書いたようにしている。<br>・評の中で福澤は、正成が良いのは死んだことではなく、その{{働き|功績|yellow}}であるとし、時代が変われば務めるべき義務は異なり、忠臣義士の死も時代が変われば{{徒死|無駄死に|red}}になると述べた。さらに忠臣義士の例として北条家の家臣・上杉の軍臣などを挙げた。<br>・また、世間が洋学者の主張を{{耶蘇教|ヤソ教|red}}（{{キリスト教|red}}）や共和政治と短絡的に結びつけているが、それらとは何の関係もないと反論した。"
+                },
+                // --- 八編〜十一編 ---
+                {
+                    id: "gs_13",
+                    section: "八編〜十一編",
+                    title: "八編：ウェーランドの説と「人間交際」",
+                    content: "八編で、アメリカの経済学者{{ウェーランド|red}}曰く、人には①{{身体|red}}、②{{知識|知恵|red}}、③{{情欲|情慾|red}}（美衣美食などを求める心）、④{{至誠|良心|red}}（誠を尽くす本心）、⑤{{意思|意志|red}}（事をなそうとする心）の5つがある。<br>・初編と八編の自由の主張の違い：初編では「自由だが分限は守る（放蕩はだめ）」と説いたが、八編では「他人に{{害|妨げ|red}}を与えなければ何をしてもいい」と説いた。<br>・「社会」のことを福澤は{{人間交際|red}}と呼んでいる。また、儒教の「不孝に三あり（後継ぎがいないことが最大の不孝）」という教えを理由に{{妾|めかけ|red}}の存在を肯定するのは間違っており、女性の人権を軽んじるべきではないと批判した。"
+                },
+                {
+                    id: "gs_14",
+                    section: "八編〜十一編",
+                    title: "九編・十編・十一編：文明の継承と「名分」「職分」",
+                    content: "・九編：人の心身の働きを二つに区別すると、一つ目は個人として{{衣食住|red}}の安楽を得るもの、二つ目は社会の中で他人と交わり、{{文明|red}}を進め後世子孫に伝えていくことである。「{{禽獣|きんじゅう|yellow}}魚虫、自から職を得ざるものなし（鳥や獣でも衣食住は得ている）」と述べ、衣食住だけで満足せず野心を持って学問を深めるべきだと説いた。<br>・十編：学問をするにはその志を高遠にしなければならない。農たらば大農と為れ、商たらば大商と為れと説き、外国に対抗して独立を守るために学問を追求すべきだとした。<br>・十一編：「{{名分|red}}」とは身分に応じて各々が上下の者に対して守るべき道徳上の本分であり、「{{職分|red}}」とは契約や法律に定められた各々の役目である。政府と国民は法律による対等な契約関係でなければならず、上下の{{名分|red}}を持ち込むから専制・抑圧が起きてしまう。名分は{{無用|頼みなきもの|yellow}}であり、{{職分|red}}はしっかり守らなければならない。"
+                },
+                // --- 十二編〜十七編 ---
+                {
+                    id: "gs_15",
+                    section: "十二編〜十七編",
+                    title: "十二編・十三編：演説の勧めと「怨望」・ニーチェ",
+                    content: "・十二編は『{{演説|スピーチ|red}}の法を勧るの説』である。外国に蝕まれてしまっている国の例として{{インド|red}}と{{トルコ|red}}が挙げられている。学問の本当の目的は本を読むことではなく{{精神の働き|yellow}}にあり、比較するなら高いもの（西洋）と比較するべきだとした。<br>・十三編：「{{怨望|えんぼう|red}}」とは恨めしく思うこと（他人の足を引っ張ること）であり、人間社会において一番の害である。福澤が挙げている怨望の最たる例は{{御殿女中|大名の奥女中|red}}である。怨望は貧困ではなく{{自由|red}}を与えないことによって発生する。<br>・十三編の参考になる、{{ニーチェ|red}}が書いた『{{道徳の系譜|red}}』では価値の逆転が書かれている。古代ローマは「{{主人道徳|貴族道徳|red}}」（力があるものが良い）、キリスト教は「{{奴隷道徳|red}}」（力を持っている人は悪く、虐げられた自分たちは良い＝ルサンチマン）である。対比の例：高尚優雅－{{卑屈|yellow}}、{{勇敢粗野|yellow}}－怯懦、{{奢侈|yellow}}－吝嗇、誠実－{{欺詐|yellow}}。"
+                },
+                {
+                    id: "gs_16",
+                    section: "十二編〜十七編",
+                    title: "十四編・十五編：世話の二義と「惑溺」の批判",
+                    content: "・十四編：「世話」という字には二つの意味があり、ひとつは{{保護|red}}、もうひとつは{{指図|命令|red}}である。国民は税金だけ出すのではなく政治に助言（指図）もしなければならない。また、経済学の論理と道徳にはズレがあり、道徳的には恵与の心は尊ぶべきだが、経済的には保護だけ行うのは間違っている。<br>・十五編：ひとつのことに心を奪われて相対的な視点を失い正しい判断ができない状態のことを{{惑溺|わくでき|red}}（または偏頗）という。東方と西方で文明の進みに違いがある原因として挙げている間違った仮説3つ：①人種の違い（{{人種|yellow}}）、②気候風土（{{習慣|風俗|yellow}}）、③宗教の違い（宗教改革の始祖である{{ルター|マルティン・ルター|red}}と{{プロテスタント|新教|red}}の教え）。西洋文明にも欠点があるため、物事の理非を判断して{{取捨選択|red}}する力を養うために疑いを持って学問をするべきだ。"
+                },
+                {
+                    id: "gs_17",
+                    section: "十二編〜十七編",
+                    title: "十六編・十七編：二つの独立・高論と実務・人望論",
+                    content: "・十六編：独立には二種類あり、有形の品物についての独立と、{{無形|精神的|red}}（精神的）な独立がある。「筒袖（つつそで）」とは{{スーツ|洋服|red}}のことである。品物や金銭に支配されるようになってはいけない。<br>・また、「{{高論|red}}」と「{{実務|red}}」は両方とも大切である。高論とは心の中で思うこと・議論することであり、実務とは心に思ったことを実際に行う働きのことだ。高論ばかりで実務が伴わない人物は不平ばかり言うことになり孤立する。<br>・十七編：{{孔子|red}}の「人が自分を知らないことよりも自分が人を理解しえないことを憂うべきだ」という『{{論語|red}}』の内容を批判し、{{人望|red}}を得ることは大切であると説いた。他人を知り、自分を知ってもらうために大事なこと3つ：①{{言語|red}}を学び自分の考えを流ちょうに話すこと、②{{表情・見目|容貌・服装|yellow}}を活発で愉快にすること、③{{境遇|身分・職業|yellow}}が異なる多くの人と交わること。"
+                }
+            ],
+            // ==========================================
+            // 学問のすゝめ（原文読解編：PDF2）
+            // ==========================================
+            gakumon_text: [
+                {
+                    id: "gt_1",
+                    section: "1編〜5編 原文",
+                    title: "一編・二編 原文抜粋",
+                    content: `<div class="serif-text leading-relaxed text-slate-800 space-y-2">
+                        <p><strong>【一編】</strong></p>
+                        <p>天は人の上に人を造らず人の下に人を造らずと云えり。されば天より人を生ずるには、万人は万人皆同じ位にして、生まれながら{{貴賤|red}}上下の差別なく、万物の霊たる身と心との働を以て天地の間にあるよろずの物を資り、以て衣食住の用を達し、自由自在、互に人の妨をなさずして各安楽にこの世を渡らしめ給うの趣意なり。</p>
+                        <p>専ら勤むべきは人間普通日用に近き{{実学|red}}なり。…賢人と愚人との別は学ぶと学ばざるとに由て出来るものなり。…学問をするには{{分限|red}}を知る事肝要なり。人の天然生まれ附は、繋がれず縛られず、一人前の男は男、一人前の女は女にて、自由自在なる者なれども、唯自由自在とのみ唱えて分限を知らざれば{{我儘放蕩|我儘・放蕩|red}}に陥ること多し。</p>
+                        <p>王政一度新たなりしより以来の一美事と云うべし。…人の貴きにあらず、{{理|red}}の尊きなり。昨今の有様を見るに、{{農工商|yellow}}の三民は其の位を百倍にし、遂には士族と肩を並るに至る可し。…人誰か{{苛政|yellow}}を好みて良政を悪む者あらん。</p>
+                        <p class="pt-2"><strong>【二編】</strong></p>
+                        <p>{{論語|red}}よみの論語知らず…経済を妨る{{貪官汚吏|yellow}}…{{通義|red}}と云うて理の等しきを云うなり。旧幕府の時代には{{切捨御免|切り捨て御免|red}}などの法あり。今の{{国法|yellow}}に従うべしと条約を結びたるなり。謹みて守らざるべからず。是即ち人民の分なり。故に一度び国法と定りたることは…人民若し{{暴政|red}}を避けんと欲せば、速やかに{{学問|red}}に志し、自ら{{才徳|yellow}}を高くして、政府と相対し、同位{{同等|red}}の地位に登らざるべからず。</p>
+                    </div>`
+                },
+                {
+                    id: "gt_2",
+                    section: "1編〜5編 原文",
+                    title: "三編・四編・五編 原文抜粋",
+                    content: `<div class="serif-text leading-relaxed text-slate-800 space-y-2">
+                        <p><strong>【三編】</strong></p>
+                        <p>いま世界中を見渡すに、{{文明開化|red}}とて、文字も武備も盛んにして富強なる国あり、或いは蛮野未開とて…{{貧富強弱|yellow}}の有様は天然の約束にあらず。国と国は同等なれども、国中の人にこの気力なきときは…{{独立|red}}の気力なき者は国を思うこと切ならず。自由独立の気風を全国に充満せしめ…苟も愛国の意あらん者は…独立の気力なき者は人に依頼して{{悪事|yellow}}を為す。</p>
+                        <p class="pt-2"><strong>【四編】</strong></p>
+                        <p>我輩は国民たるの分限を尽くし、政府は政府たるの分限を尽くし、全国の{{独立|red}}を維持せざるべからず。その気風とは所謂「{{スピリット|red}}」…平民と雖も悉皆無気無力の{{愚民|yellow}}のみにあらず、万に一人は公明誠実の良民もある。その任にある者は唯一種の{{洋学者|red}}あるのみ。この国に在ては{{中等|yellow}}以上の地位…明に{{政府|yellow}}の不利を述る者あらば…</p>
+                        <p class="pt-2"><strong>【五編】</strong></p>
+                        <p>蒸気機関は{{ワット|red}}の発明なり、鉄道はステアンソン（スティーブンソン）の工夫なり、商売の法を一変したるに在てはアダムスミスの功なり。この諸家は所謂「{{ミドルクラス|red}}」なる者…この間に当り政府の{{義務|職分|yellow}}は唯その事を妨げずして適宜に行われしめ、人の向う所を察してこれを{{保護|red}}するのみ。</p>
+                    </div>`
+                },
+                {
+                    id: "gt_3",
+                    section: "6編〜11編 原文",
+                    title: "六編・七編・評 原文抜粋",
+                    content: `<div class="serif-text leading-relaxed text-slate-800 space-y-2">
+                        <p><strong>【六編】</strong></p>
+                        <p>国法の貴きを論ず。政府は{{国民|人民|red}}の名代にて、その分は罪ある者を取押さえて、罪なき者を保護する。今人来りて人を害せんとすることあれば即ち国の法を犯し、自ら私に他人の罪を裁決する者にて、これを{{私裁|red}}と名付け…{{怨望|悪弊|yellow}}の最も甚だしくして、政を害するの最も大なるものは{{私裁|yellow}}なり。自ら天誅を行うと唱れば…{{国法|red}}の貴きを知らざるものは、唯政府の人を恐れ…</p>
+                        <p class="pt-2"><strong>【七編】</strong></p>
+                        <p>国民の分を論ず。その一の勤は{{客|red}}の積りなり、その二の勤は{{主人|red}}の積りなり。相談の上にて一社の法を立て…この身分を以て論ずれば、一国人民は{{国法|yellow}}を重んじ、一国の国法をして貴賤上下の別なく唯使人の{{便利|約束|yellow}}により…{{運上|税金|red}}を払うて政府の保護を買う。人間世界に内乱ほど不人情なるものはなし。{{正理|red}}を以て身を棄つる…彼の「{{権助|red}}」が一万の敵を殺して討死する…西洋の語にて{{マルチルドム|red}}と云う。</p>
+                        <p class="pt-2"><strong>【学問のすすめの評】</strong></p>
+                        <p>唯命をさえ棄てればなりとて…{{楠公|楠木正成|red}}は賊にても、この従死したる者は北条家の忠臣…その討死の士はこれを{{忠臣義士|red}}と云わざるを得ず。義士の死を{{犬死|無駄死に,徒死|red}}と為し、大{{不忠|yellow}}とする…公の事は、学問のすゝめ中にその文字は無しと雖も、弘安年中に{{北条時宗|時宗|red}}が元使を斬たるは…福澤氏が{{耶蘇教|キリスト教|red}}に心酔して{{共和|red}}政治を主張するとは…</p>
+                    </div>`
+                },
+                {
+                    id: "gt_4",
+                    section: "6編〜11編 原文",
+                    title: "八編・九編・十編・十一編 原文抜粋",
+                    content: `<div class="serif-text leading-relaxed text-slate-800 space-y-2">
+                        <p><strong>【八編】</strong></p>
+                        <p>政府の強大にして小{{民|人|yellow}}を制圧する…婦人に三従の道あり…親に{{孝行|red}}するは固より人たる者の当然…芸人とあれば他人にてもこれを丁寧にする筈なり。子を生みて子を養うは人類のみに非ず、{{禽獣|yellow}}皆然り。…{{嫁いびり|yellow}}の鑑遠からず{{姑|red}}の時にあり。</p>
+                        <p class="pt-2"><strong>【九編】</strong></p>
+                        <p>第一は一人たる身に就ての働なり、第二は{{人間交際|red}}の仲間に居り…心身の働を以て{{衣食住|red}}の安楽を致す。これを{{私慾|yellow}}と名付け或いは{{家業|yellow}}と称すべしと雖も、人の性は群居を好み決して独歩するを得ず。即ち是れ人間交際の起る由縁なり。この機会に逢う者は即ち今の{{学者|red}}なれば、学者世のために勉強せざるべからず。</p>
+                        <p class="pt-2"><strong>【十編】</strong></p>
+                        <p>日本全国に分布せる{{人民|yellow}}に力を増して、始て{{西洋|red}}の文明と鉾を争う。今の{{学者|yellow}}は何を目的として{{学問|red}}に従事するや。新たに事を企るものは先ず外国人を雇い…農たらば{{大農|red}}と為れ、商ならば{{大商|red}}と為れ。</p>
+                        <p class="pt-2"><strong>【十一編】</strong></p>
+                        <p>この仲間附合に実の{{親子|家族|red}}の流儀を用いんとするも、亦難きにあらずや。右の如く上下{{貴賤|yellow}}の名分を正だし、唯その名のみを主張して{{専制|red}}の権を行わんとする果して例の{{抑圧|yellow}}なり。世の中に頼みなきものは{{名分|red}}なり、毒を流すのは{{専制|yellow}}抑圧なり。名分と{{職分|red}}は文字こそ相似たれ、その趣意は全く別物なり。</p>
+                    </div>`
+                },
+                {
+                    id: "gt_5",
+                    section: "12編〜17編 原文",
+                    title: "十二編〜十七編 原文抜粋",
+                    content: `<div class="serif-text leading-relaxed text-slate-800 space-y-2">
+                        <p><strong>【十二編】</strong></p>
+                        <p>演説とは英語にて{{スピーチ|red}}と云い…故に学問の本趣意は{{読書|本を読むこと|red}}のみに非ずして精神の働にあり。{{インド|印度|red}}の国体旧ならざるに非ず、{{トルコ|土耳其|red}}の政府も威権強盛にして…インドは既に{{英国|イギリス|red}}の所領に帰して…</p>
+                        <p class="pt-2"><strong>【十三編】</strong></p>
+                        <p>凡そ人間に{{不徳|悪徳|yellow}}の箇条多しと雖も、その交際に害あるものは{{怨望|red}}より大なるものはなし。…怨望の人間交際に害あること斯くのごとし。今その源因を尋るに、唯{{不自由|自由を与えないこと|red}}の一事に在り。但しその不自由とは、{{貧富|衣食|yellow}}の貧困に非ず…人の心の性は{{男子|男|yellow}}も女子も異なるの理なし。我封建の時代に沢山なる大名の{{御殿女中|奥女中|red}}を以て最とす。</p>
+                        <p class="pt-2"><strong>【十四編・十五編】</strong></p>
+                        <p>世話の字に二の意味あり、一は{{保護|red}}の義なり、一は{{指図|命令|red}}の義なり。世話の字に保護と指図と両様の義を備えて…政府にては、法律を設けて国民の生命と面目と{{財産|私有|yellow}}とを大切に取り扱い…見ず知らずの{{乞食|貧民|yellow}}に銭を投与し…一身の{{私徳|道徳|yellow}}に於て恵与の心は最も貴ぶべく、最も好みすべきものなり。<br>
+                        巫蠱神仏に{{惑溺|red}}し…日本人が靴を用いて西洋人が{{下駄|red}}をはくは…日本の{{仏教|宗教|yellow}}…羅馬宗教に敵して{{プロテスタント|red}}の教えを開きたる…</p>
+                        <p class="pt-2"><strong>【十六編・十七編】</strong></p>
+                        <p>不羈独立の語は近来世間の話にも聞く所なれども、物に就ての独立と、精神に就ての{{独立|red}}と、二様に区別あるなり。三杯の{{酒|銘酒|yellow}}、人を呑む…{{高論|red}}とは心に思う所を言に発し、書に記すもの…{{実務|red}}とは心に思う所を外に顕わし、外物に接し処置を施すことなり。<br>
+                        {{人望|red}}論：人望を得るの大切なること以て知るべし。人望は{{他力|他人|yellow}}に属すること当然の道理にして…{{言語|red}}を学ばざるべからず。{{容貌|顔色|yellow}}を快くして表を飾るを以て人間交際の要と為す。</p>
+                    </div>`
+                }
+            ],
+            // ==========================================
+            // 3年2期 経済分野（PDF3）
+            // ==========================================
+            economy: [
+                {
+                    id: "ec_1",
+                    section: "需要と供給・弾力性",
+                    title: "財の分類（所得・他財価格との関係）",
+                    content: "・所得が増えることで需要量が増える財を{{正常財|上級財|red}}という。<br>・所得が増えることで需要量が減る財を{{下級財|劣等財|red}}という。例：昔より{{麦飯|大麦|yellow}}を食べる人が減り、貧しい人ほど麦飯を食べ、所得が増えると白米や肉を食べるようになる。<br>・需要曲線Dのグラフを需要量Xと価格pを用いて表すと、{{X = D(p)|X=D(p)|red}} となる。<br>・商品Aの価格が上がると商品Bの需要が上がるとき、この関係を{{代替財|red}}という（例：{{バター・マーガリン|バターとマーガリン|yellow}}）。<br>・商品Aの価格が上がると商品Bの需要が下がるとき、この関係を{{補完財|red}}という（例：{{CD・CDプレーヤー|CDとCDプレーヤー,パンとジャム|yellow}}）。"
+                },
+                {
+                    id: "ec_2",
+                    section: "需要と供給・弾力性",
+                    title: "需要の価格弾力性と余剰",
+                    content: "・価格の上がり下がりで需要の変化が少ないことを「需要の{{価格弾力性|red}}が{{小さい|red}}」という。どのような商品がこのような特徴を持つか：{{生活必需品|必需品|red}}。<br>・需要の価格弾力性が小さい場合（農産物など）、豊作で収穫量が増えると価格が大きく下落するため、農家の収入は{{減る|減少する|red}}。<br>・消費者は何を目指しているか：{{効用最大化|効用の最大化|red}}。<br>・消費者がその商品のために出してもいいと思っている価格（支払許容額）と実際に売っている価格の差の合計のことを{{消費者余剰|red}}という。"
+                },
+                {
+                    id: "ec_3",
+                    section: "企業行動と費用・税制",
+                    title: "利潤最大化と各種の費用",
+                    content: "・生産者は何を目指しているか：{{利潤最大化|利潤の最大化|red}}。どのように計算するか：{{総収入 − 総費用|総収入-総費用,収入-費用|red}}。<br>・費用全体のこと：{{総費用|red}}。<br>・単位当たりの費用のこと：{{平均費用|red}}。計算式：{{総費用 ÷ 生産量|総費用/生産量|red}}。<br>・生産量を1単位増加するごとに伴う費用の増大幅：{{限界費用|red}}。<br>・総費用のうち、生産量に応じて増大する部分：{{可変費用|red}}。計算式：{{総費用 − 固定費用|総費用-固定費用|red}}（例：原材料費・パート人件費など）。<br>・生産量とは別にかかる費用のこと：{{固定費用|red}}（例2つ：{{減価償却費|機械設備費|yellow}}、{{地代|家賃|yellow}}）。"
+                },
+                {
+                    id: "ec_4",
+                    section: "企業行動と費用・税制",
+                    title: "間接税（従価税・従量税）と余剰・自由貿易",
+                    content: "・価格に応じて変わる税のこと：{{従価税|red}}（例：消費税）。<br>・個数や量によって変わる税のこと：{{従量税|red}}（例：{{ガソリン税|揮発油税|yellow}}、{{たばこ税|酒税|yellow}}）。<br>・供給曲線の違い：従量税は元の供給曲線Sと税引き後のS'の{{傾き|幅|yellow}}が一定（平行移動）だが、従価税は価格が高いほど税額が増えるため{{幅が広がる|傾きが急になる|yellow}}。<br>・税をかけると死荷重（死重損失）が発生するため、総余剰は{{減少|減る|red}}する。<br>・自由貿易をすると（輸入国の場合）、{{消費者余剰|red}}は増えるが{{生産者余剰|red}}は減少する（社会全体の総余剰は増加する）。"
+                },
+                {
+                    id: "ec_5",
+                    section: "市場の失敗と外部性",
+                    title: "外部性の4分類と市場の失敗",
+                    content: "・市場の外で起きること（取引当事者以外の第三者に影響を与えること）を{{外部性|外部効果|red}}といい、市場の失敗の原因の一つである。<br>① {{正の生産外部性|red}}：直接のやり取りのない生産活動によりプラスの影響を与えるもの（例：{{養蜂家と果樹園|養蜂家・果樹園|yellow}}）。<br>② {{負の生産外部性|red}}：生産活動によりマイナスの影響を与えるもの（例：{{公害|水俣病・イタイイタイ病|yellow}}、水俣病、イタイイタイ病）。<br>③ {{正の消費外部性|red}}：自分の消費の時に他人にプラスの影響を与えるもの（例：{{予防接種|ワクチン接種|yellow}}、他人もかかりにくくなる）。<br>④ {{負の消費外部性|red}}：自分の消費の時に他人にマイナスの影響を与えるもの（例：{{たばこ|喫煙,受動喫煙|yellow}}）。<br>・図中の「Ds」とは{{社会的需要曲線|社会的限界便益曲線|red}}のこと。<br>・外部性以外の市場の失敗あと3つ：{{公共財|red}}、{{独占|不完全競争|red}}、{{情報の非対称性|red}}。市場に任せると失敗してしまうときは{{政府|red}}が介入する。"
+                },
+                {
+                    id: "ec_6",
+                    section: "ゲーム理論",
+                    title: "ゲーム理論の基礎・支配戦略・ナッシュ均衡",
+                    content: "・生産者も消費者も多数おり、価格支配力がない市場のこと：{{完全競争市場|red}}。しかし実際には{{不完全競争|寡占・独占|yellow}}状態のことが多い。<br>・このようなとき、互いの行動がどのように影響を与え合うか数学的に分析する理論を{{ゲーム理論|red}}という。3つの要素は、{{プレーヤー|red}}、{{戦略|red}}、{{利得|red}}である。<br>・この枠組みを用いて経済や企業の意思決定の状況を分析するモデルを{{戦略型ゲーム|標準型ゲーム|red}}といい、この時書いた表のことを{{利得行列|利得表|red}}という。<br>・相手の戦略に関わらず、取るのが望ましい戦略のこと：{{支配戦略|red}}。これをすべてのプレーヤーが選択していること：{{支配戦略均衡|red}}。<br>・授業で扱った経済以外の分野での例2つ：{{囚人のジレンマ|red}}、{{冷戦|軍拡競争|red}}。<br>・各プレーヤーの戦略が他のプレーヤーの戦略の最適反応になっている状態のこと：{{ナッシュ均衡|red}}。この状態のとき、相手の戦略によって最適な戦略は変わるため、{{支配戦略|red}}は存在しない。<br>・互いに取りたい選択の違いからどちらかが必ず不利益を被ってしまう例（ナッシュ均衡が2つある例）：{{恋人の悩み|男女の争い|red}}。<br>・囚人のジレンマにおいて支配戦略均衡はどういう場合か：{{お互いに自白を選んだ場合|互いに自白|yellow}}。<br>・冷戦の例において支配戦略均衡はどういう場合か：{{ともに軍拡を選んだ場合|互いに軍拡|yellow}}。"
+                },
+                {
+                    id: "ec_7",
+                    section: "ゲーム理論",
+                    title: "展開型ゲーム（A社とB社の新規参入ゲーム）",
+                    content: "・ゲーム理論のモデルの一つ。戦略型ゲームは同時に行動を選ぶが、こちらは先手と後手がある（ゲームの木で表現する）：{{展開型ゲーム|red}}。<br>・A社がB社のある街に進出する場合、その前にB社にはどのような選択肢があるか：{{現状維持|red}}、{{店舗拡大|新規出店|red}}。<br>・A社が参入した後、B社にはどのような選択肢があるか：{{価格競争|red}}、{{共存|協調|red}}。<br>・B社がどの時点でどんな選択をするとA社はいずれの場合も利得がなくなるか：{{参入前に店舗拡大|事前に店舗拡大|yellow}}。<br>・B社がどの時点でどんな選択をするとA社は参入したあと利得を得られるか：{{A社参入後に共存|現状維持かつ参入後に共存|yellow}}。"
+                }
+            ]
+        };
+
+        // ==========================================
+        // アプリ状態管理
+        // ==========================================
+        let currentTab = 'gakumon_summary';
+        let currentMode = 'tap'; // 'tap' | 'input' | 'sheet'
+        let currentSectionFilter = 'ALL';
+        let cardOrder = {}; // タブごとの並び順保持
+        let masteredIds = new Set(JSON.parse(localStorage.getItem('seikei_mastered_v1') || '[]'));
+
+        // 初期化時に各タブの並び順を設定
+        Object.keys(studyData).forEach(tab => {
+            cardOrder[tab] = studyData[tab].map((_, idx) => idx);
+        });
+
+        // ==========================================
+        // UI更新・レンダリング関数
+        // ==========================================
+        function updateMasteryUI() {
+            let total = 0;
+            Object.values(studyData).forEach(arr => total += arr.length);
+            const count = masteredIds.size;
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+
+            document.getElementById('mastery-percent').textContent = `${percent}%`;
+            document.getElementById('mastered-count').textContent = count;
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('mastery-bar').style.width = `${percent}%`;
+        }
+
+        function toggleMastered(cardId) {
+            if (masteredIds.has(cardId)) {
+                masteredIds.delete(cardId);
+                showToast('「未習得」に戻しました');
+            } else {
+                masteredIds.add(cardId);
+                showToast('🎉 「習得済み」にチェックしました！');
+            }
+            localStorage.setItem('seikei_mastered_v1', JSON.stringify([...masteredIds]));
+            updateMasteryUI();
+            renderCards();
+        }
+
+        function resetProgress() {
+            if (masteredIds.size === 0) return;
+            masteredIds.clear();
+            localStorage.removeItem('seikei_mastered_v1');
+            updateMasteryUI();
+            renderCards();
+            showToast('習得状況をリセットしました');
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            currentSectionFilter = 'ALL';
+
+            // タブボタンの見た目更新
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if (tabName === 'economy') {
+                activeBtn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-blue-600 text-white shadow-sm";
+            } else {
+                activeBtn.className = "tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all bg-rose-600 text-white shadow-sm";
+            }
+
+            renderSectionPills();
+            renderCards();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            ['tap', 'input', 'sheet'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                if (m === mode) {
+                    btn.className = "px-2.5 py-1 rounded-md font-bold bg-slate-800 text-white transition-all";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-md font-bold text-slate-600 hover:bg-slate-100 transition-all";
+                }
+            });
+
+            // 入力テストバーの表示切替
+            const testBar = document.getElementById('test-action-bar');
+            if (mode === 'input') {
+                testBar.classList.remove('hidden');
+            } else {
+                testBar.classList.add('hidden');
+            }
+
+            // リアル赤シートの表示切替
+            const sheetOverlay = document.getElementById('red-sheet-overlay');
+            if (mode === 'sheet') {
+                document.body.classList.add('real-red-sheet');
+                sheetOverlay.classList.remove('hidden');
+                showToast('赤シートをドラッグして文字の上に重ねてください');
+            } else {
+                document.body.classList.remove('real-red-sheet');
+                sheetOverlay.classList.add('hidden');
+            }
+
+            renderCards();
+        }
+
+        function renderSectionPills() {
+            const items = studyData[currentTab];
+            const sections = ['ALL', ...new Set(items.map(item => item.section))];
+            const container = document.getElementById('section-pills');
+
+            container.innerHTML = sections.map(sec => {
+                const label = sec === 'ALL' ? 'すべて表示' : sec;
+                const isActive = currentSectionFilter === sec;
+                const activeClass = currentTab === 'economy'
+                    ? 'bg-blue-100 text-blue-800 border-blue-300 font-bold'
+                    : 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+                const inactiveClass = 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+
+                return `<button onclick="filterBySection('${sec}')" class="px-3 py-1 rounded-full border whitespace-nowrap transition-colors ${isActive ? activeClass : inactiveClass}">
+                    ${label}
+                </button>`;
+            }).join('');
+        }
+
+        function filterBySection(sec) {
+            currentSectionFilter = sec;
+            renderSectionPills();
+            renderCards();
+        }
+
+        function shuffleCards() {
+            const arr = [...cardOrder[currentTab]];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            cardOrder[currentTab] = arr;
+            renderCards();
+            showToast('🔀 出題順をシャッフルしました');
+        }
+
+        // テキスト内の {{答え|別解|色}} をモードに応じたHTMLに変換
+        function parseContent(rawHtml, cardId) {
+            let blankIndex = 0;
+            return rawHtml.replace(/\{\{([^}]+)\}\}/g, (match, inner) => {
+                const parts = inner.split('|');
+                const answer = parts[0].trim();
+                const alts = parts[1] ? parts[1].trim() : '';
+                const color = parts[2] ? parts[2].trim() : 'red';
+                const uid = `${cardId}_b_${blankIndex++}`;
+
+                if (currentMode === 'tap') {
+                    const colorClass = color === 'yellow' ? 'blank-yellow' : 'blank-red';
+                    return `<span id="${uid}" onclick="toggleBlank('${uid}')" class="${colorClass} hidden-ans relative" title="クリックで表示/非表示">${answer}</span>`;
+                } else if (currentMode === 'input') {
+                    const widthCh = Math.max(answer.length * 1.4, 5);
+                    return `<span class="inline-flex items-center align-baseline">
+                        <input type="text" id="${uid}" data-ans="${answer}" data-alts="${alts}" 
+                            style="width: ${widthCh}em;" 
+                            class="test-input" placeholder="入力..." 
+                            onkeydown="if(event.key==='Enter') checkSingleInput('${uid}')">
+                        <button onclick="showHintForInput('${uid}')" title="答えを見る" class="text-xs text-slate-400 hover:text-amber-600 px-1">💡</button>
+                    </span>`;
+                } else if (currentMode === 'sheet') {
+                    const sheetClass = color === 'yellow' ? 'real-sheet-target-yellow font-bold underline decoration-amber-400' : 'real-sheet-target-red font-bold underline decoration-rose-300';
+                    return `<span class="${sheetClass} px-1">${answer}</span>`;
+                }
+            });
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            const onlyUnmastered = document.getElementById('filter-unmastered').checked;
+            const orderedItems = cardOrder[currentTab].map(idx => studyData[currentTab][idx]);
+
+            const filteredItems = orderedItems.filter(item => {
+                if (currentSectionFilter !== 'ALL' && item.section !== currentSectionFilter) return false;
+                if (onlyUnmastered && masteredIds.has(item.id)) return false;
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-2xs">
+                        <div class="text-4xl mb-2">🎊</div>
+                        <h3 class="text-base font-bold text-slate-800">表示する問題がありません</h3>
+                        <p class="text-xs text-slate-500 mt-1">すべての問題を習得済みか、フィルター条件に一致する問題がありません。</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredItems.map((item, idx) => {
+                const isMastered = masteredIds.has(item.id);
+                const parsedBody = parseContent(item.content, item.id);
+                const badgeColor = currentTab === 'economy' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-rose-50 text-rose-700 border-rose-200';
+
+                return `
+                <article class="bg-white rounded-2xl border ${isMastered ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200'} p-4 sm:p-5 shadow-2xs transition-all">
+                    <div class="flex flex-wrap items-start justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
+                        <div>
+                            <span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${badgeColor} mb-1">
+                                ${item.section}
+                            </span>
+                            <h2 class="text-sm sm:text-base font-bold text-slate-800">
+                                Q${idx + 1}. ${item.title}
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            ${currentMode === 'tap' ? `
+                                <button onclick="toggleCardBlanks('${item.id}')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+                                    開閉切替
+                                </button>
+                            ` : ''}
+                            <button onclick="toggleMastered('${item.id}')" class="text-xs px-2.5 py-1 rounded-lg font-bold border transition-all flex items-center gap-1 ${isMastered ? 'bg-emerald-500 text-white border-emerald-600 shadow-2xs' : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-400 hover:text-emerald-600'}">
+                                ${isMastered ? '✓ 習得済' : '○ 覚えた'}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-sm sm:text-[15px] leading-loose text-slate-700">
+                        ${parsedBody}
+                    </div>
+                </article>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // タップ暗記操作
+        // ==========================================
+        function toggleBlank(uid) {
+            const el = document.getElementById(uid);
+            if (!el) return;
+            if (el.classList.contains('hidden-ans')) {
+                el.classList.remove('hidden-ans');
+                el.classList.add('revealed');
+            } else {
+                el.classList.remove('revealed');
+                el.classList.add('hidden-ans');
+            }
+        }
+
+        function toggleCardBlanks(cardId) {
+            const blanks = document.querySelectorAll(`[id^="${cardId}_b_"]`);
+            const anyHidden = Array.from(blanks).some(b => b.classList.contains('hidden-ans'));
+            blanks.forEach(b => {
+                if (anyHidden) {
+                    b.classList.remove('hidden-ans');
+                    b.classList.add('revealed');
+                } else {
+                    b.classList.remove('revealed');
+                    b.classList.add('hidden-ans');
+                }
+            });
+        }
+
+        function hideAll() {
+            if (currentMode !== 'tap') setMode('tap');
+            document.querySelectorAll('.blank-red, .blank-yellow').forEach(el => {
+                el.classList.remove('revealed');
+                el.classList.add('hidden-ans');
+            });
+            showToast('🙈 すべての空欄を隠しました');
+        }
+
+        function revealAll() {
+            if (currentMode !== 'tap') setMode('tap');
+            document.querySelectorAll('.blank-red, .blank-yellow').forEach(el => {
+                el.classList.remove('hidden-ans');
+                el.classList.add('revealed');
+            });
+            showToast('👁️ すべての答えを表示しました');
+        }
+
+        // ==========================================
+        // 入力テスト採点ロジック
+        // ==========================================
+        function normalizeStr(str) {
+            return str
+                .replace(/\s+/g, '')
+                .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                .replace(/・/g, '')
+                .replace(/−/g, '-')
+                .replace(/ー/g, '-')
+                .toLowerCase();
+        }
+
+        function checkSingleInput(uid) {
+            const input = document.getElementById(uid);
+            if (!input) return false;
+            const userVal = normalizeStr(input.value);
+            if (!userVal) {
+                input.classList.remove('correct', 'incorrect');
+                return false;
+            }
+
+            const ans = normalizeStr(input.dataset.ans);
+            const alts = input.dataset.alts ? input.dataset.alts.split(',').map(normalizeStr) : [];
+            const isCorrect = (userVal === ans) || alts.includes(userVal);
+
+            input.classList.remove('correct', 'incorrect');
+            if (isCorrect) {
+                input.classList.add('correct');
+                return true;
+            } else {
+                input.classList.add('incorrect');
+                return false;
+            }
+        }
+
+        function showHintForInput(uid) {
+            const input = document.getElementById(uid);
+            if (!input) return;
+            input.value = input.dataset.ans;
+            input.classList.remove('incorrect');
+            input.classList.add('correct');
+        }
+
+        function gradeAllInputs() {
+            const inputs = document.querySelectorAll('.test-input');
+            let total = inputs.length;
+            let correctCount = 0;
+
+            inputs.forEach(inp => {
+                if (checkSingleInput(inp.id)) correctCount++;
+            });
+
+            showToast(`採点結果: ${total}問中 ${correctCount}問 正解！`);
+        }
+
+        function clearAllInputs() {
+            document.querySelectorAll('.test-input').forEach(inp => {
+                inp.value = '';
+                inp.classList.remove('correct', 'incorrect');
+            });
+        }
+
+        // ==========================================
+        // 可動式リアル赤シートのドラッグ処理
+        // ==========================================
+        const sheetEl = document.getElementById('red-sheet-overlay');
+        let isDragging = false;
+        let startY = 0;
+        let initialTop = 220;
+
+        sheetEl.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            isDragging = true;
+            startY = e.clientY;
+            initialTop = sheetEl.offsetTop;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaY = e.clientY - startY;
+            const newTop = Math.max(60, Math.min(window.innerHeight - 100, initialTop + deltaY));
+            sheetEl.style.top = `${newTop}px`;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        sheetEl.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            isDragging = true;
+            startY = e.touches[0].clientY;
+            initialTop = sheetEl.offsetTop;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const deltaY = e.touches[0].clientY - startY;
+            const newTop = Math.max(60, Math.min(window.innerHeight - 100, initialTop + deltaY));
+            sheetEl.style.top = `${newTop}px`;
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // ==========================================
+        // トースト通知
+        // ==========================================
+        let toastTimer;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2400);
+        }
+
+        // 初期起動
+        window.onload = () => {
+            updateMasteryUI();
+            renderSectionPills();
+            renderCards();
+        };
+    </script>
+</body>
+</html>
